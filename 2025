@@ -1,0 +1,106 @@
+// SEO-ready Next.js digital products store fully optimized for DigitalTemplatesHub.com
+
+import React, { useState } from 'react';
+import Head from 'next/head';
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY);
+
+const products = [
+  { id: 1, name: 'Business Plan Template', price: 20, file: '/downloads/business-plan.pdf', description: 'Download a ready-to-use business plan template perfect for startups and small businesses.', alt: 'Business Plan Template PDF' },
+  { id: 2, name: 'Social Media Calendar', price: 15, file: '/downloads/social-calendar.pdf', description: 'Plan and organize your social media content with this simple calendar template.', alt: 'Social Media Content Calendar Template' },
+  { id: 3, name: 'Invoice Template', price: 10, file: '/downloads/invoice.pdf', description: 'Professional invoice template to bill your clients quickly and efficiently.', alt: 'Professional Invoice Template PDF' },
+  { id: 4, name: 'Content Planner', price: 18, file: '/downloads/content-planner.pdf', description: 'A full content planner to organize blog, social, and marketing posts.', alt: 'Content Planner Template PDF' },
+  { id: 5, name: 'Marketing Checklist', price: 12, file: '/downloads/marketing-checklist.pdf', description: 'Checklist to ensure all marketing campaigns are set up correctly for success.', alt: 'Marketing Campaign Checklist PDF' }
+];
+
+const blogPosts = [
+  { id: 1, title: 'Top 10 Templates Every Small Business Needs', content: 'Discover the essential digital templates that will save time and boost productivity for small businesses and entrepreneurs.' },
+  { id: 2, title: 'How to Use a Business Plan Template Effectively', content: 'Step-by-step guide on filling out a business plan template to organize and grow your business successfully.' },
+  { id: 3, title: 'Creating Social Media Content That Converts', content: 'Learn how to plan and schedule your posts using our social media calendar templates to drive engagement and sales.' }
+];
+
+export default function Home() {
+  const [cart, setCart] = useState([]);
+
+  const addToCart = (product) => {
+    setCart([...cart, product]);
+  };
+
+  const handleCheckout = async () => {
+    const stripe = await stripePromise;
+    const session = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: cart })
+    }).then(res => res.json());
+
+    await stripe.redirectToCheckout({ sessionId: session.id });
+  };
+
+  return (
+    <>
+      <Head>
+        <title>Digital Templates Hub | Download Ready-to-Use Business Templates</title>
+        <meta name="description" content="DigitalTemplatesHub.com offers professional digital templates for small businesses, including business plans, social media calendars, invoices, and marketing checklists for instant download." />
+        <meta name="keywords" content="digital templates, business templates, social media calendar, invoice template, marketing checklist, entrepreneur templates" />
+        <meta name="author" content="DigitalTemplatesHub.com" />
+      </Head>
+      <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
+        <h1>DigitalTemplatesHub.com</h1>
+        <p>Your one-stop hub for ready-to-use digital templates for small businesses and entrepreneurs.</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+          {products.map(p => (
+            <div key={p.id} style={{ border: '1px solid #ccc', padding: '1rem', width: '220px' }}>
+              <h3>{p.name}</h3>
+              <img src={p.file} alt={p.alt} style={{ width: '100%', height: 'auto' }} />
+              <p>{p.description}</p>
+              <p>Price: ${p.price}</p>
+              <button onClick={() => addToCart(p)}>Add to Cart</button>
+            </div>
+          ))}
+        </div>
+        <h2>Cart</h2>
+        <ul>
+          {cart.map((item, index) => <li key={index}>{item.name} - ${item.price}</li>)}
+        </ul>
+        {cart.length > 0 && <button onClick={handleCheckout}>Checkout</button>}
+
+        <h2>Blog / Guides</h2>
+        <div style={{ marginTop: '2rem' }}>
+          {blogPosts.map(post => (
+            <div key={post.id} style={{ border: '1px solid #ddd', padding: '1rem', marginBottom: '1rem' }}>
+              <h3>{post.title}</h3>
+              <p>{post.content}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/*
+Server Side (Next.js API route /api/create-checkout-session.js):
+
+import Stripe from 'stripe';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+export default async function handler(req, res) {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: req.body.items.map(item => ({
+      price_data: {
+        currency: 'usd',
+        product_data: { name: item.name },
+        unit_amount: item.price * 100
+      },
+      quantity: 1
+    })),
+    mode: 'payment',
+    success_url: 'https://digitaltemplateshub.com/success',
+    cancel_url: 'https://digitaltemplateshub.com/cancel',
+  });
+  res.status(200).json({ id: session.id });
+}
+*/
